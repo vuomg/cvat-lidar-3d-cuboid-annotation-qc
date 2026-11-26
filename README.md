@@ -94,6 +94,7 @@ kích thước theo track) làm hỏng **0** box đúng, còn `all` làm hỏng 
 |---|---|
 | [`SETUP.md`](SETUP.md) | Cài đặt, chạy server, nạp extension, demo trên CVAT, xử lý sự cố |
 | [`extension/README.md`](extension/README.md) | Cách dùng extension, bảo mật, giới hạn, danh sách kiểm tra thủ công |
+| [`docs/WORKFLOW.md`](docs/WORKFLOW.md) | Workflow, pipeline, kiến thức nền và các bẫy đã gặp khi làm đề tài |
 | [`docs/REFERENCES.md`](docs/REFERENCES.md) | Bài báo tham khảo, bài nào ảnh hưởng phần nào, đã áp dụng đến đâu |
 | [`docs/CVAT_CALIBRATION.md`](docs/CVAT_CALIBRATION.md) | Quy ước cuboid của CVAT (thứ tự scale, chiều quay) đã kiểm chứng |
 | [`docs/PILOT.md`](docs/PILOT.md) | Quy trình pilot với người thật và tiêu chí thành công |
