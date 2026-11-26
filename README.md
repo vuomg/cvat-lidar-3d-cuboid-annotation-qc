@@ -24,6 +24,83 @@ chưa có pilot với annotator thật (xem [Giới hạn](#giới-hạn-quan-tr
 Mỗi cờ có mức `ERROR` / `WARNING`, ghi chú lý do và (nếu có) **gợi ý sửa**: lật hướng, kích thước theo trung vị của track hoặc
 của class, dịch box.
 
+## Workflow và pipeline
+
+### 1. Workflow gán nhãn có QC (tool nằm ở đâu)
+Chỉ số của đề tài: **số vòng bị trả lại** và **IoU 3D của nhãn so với chuẩn**. Baseline là quy trình không có bước "Chạy QC".
+
+```mermaid
+flowchart LR
+    A["Annotator gán nhãn<br/>trong CVAT"] --> B["Chạy QC trước khi nộp<br/>(nút QC)"]
+    B --> C["Sửa lỗi bị cờ<br/>hoặc áp dụng gợi ý an toàn"]
+    C --> D["Nộp task"]
+    D --> E{"Reviewer duyệt"}
+    E -->|"Còn lỗi"| F["Trả lại<br/>(+1 vòng bị trả lại)"]
+    F --> A
+    E -->|"Đạt"| G["Nhận<br/>(đo IoU 3D so với chuẩn)"]
+```
+
+### 2. Pipeline kỹ thuật của tool
+Từ nhãn và point cloud đến cờ, gợi ý sửa, và quyết định của người. Quyết định "báo nhầm" quay lại để đo precision thật.
+
+```mermaid
+flowchart TB
+    subgraph IN["Đầu vào"]
+        N["nuScenes<br/>JSON + .pcd.bin"]
+        V["Job CVAT 3D<br/>nhãn + point cloud .pcd"]
+    end
+    N --> P["Chuẩn hóa<br/>tâm, kích thước, hướng, track"]
+    V --> P
+    P --> F["Đặc trưng<br/>số điểm trong box, khoảng cách,<br/>vận tốc theo track, IoU 3D"]
+    F --> C["5 checker<br/>LOW_LIDAR_PTS, BAD_SIZE, OVERLAP,<br/>HEADING_REVERSED, BOX_OFFSET"]
+    C --> S["Mức độ ERROR, WARNING, INFO<br/>kèm lý do"]
+    S --> X["Gợi ý sửa<br/>lật hướng, kích thước theo track, dịch box"]
+    X --> VW["Viewer HTML"]
+    X --> EXT["Extension trong CVAT"]
+    VW --> H{"Người quyết định"}
+    EXT --> H
+    H -->|"Đúng lỗi"| FIX["Sửa hoặc áp dụng<br/>gợi ý an toàn"]
+    H -->|"Báo nhầm"| DEC["decisions.csv<br/>đo precision thật"]
+    FIX --> RE["QC lại để kiểm tra"]
+```
+
+### 3. Kiến trúc khi dùng trong CVAT
+Extension đọc và ghi bằng phiên đăng nhập sẵn có của trình duyệt; server QC chỉ tính toán và không có quyền vào CVAT.
+
+```mermaid
+flowchart LR
+    subgraph BR["Trình duyệt Chrome hoặc Edge"]
+        CV["Trang job CVAT"]
+        EX["Extension<br/>content script + service worker"]
+        CV --- EX
+    end
+    SV["Server QC local<br/>127.0.0.1:8766, có token"]
+    CS["CVAT server<br/>localhost:8080"]
+    EX -->|"đọc nhãn và point cloud<br/>(phiên đăng nhập của bạn)"| CS
+    EX -->|"nhãn + point cloud"| SV
+    SV -->|"lỗi + kế hoạch ghi"| EX
+    EX -->|"PATCH cờ và gợi ý (CSRF)"| CS
+```
+
+### 4. Pipeline đánh giá
+`nuScenes` là nhãn tham chiếu nhưng **không có nhãn "box nào là lỗi"**, nên recall đo trên lỗi tự chèn, còn precision chỉ có cận dưới.
+
+```mermaid
+flowchart LR
+    G["Nhãn nuScenes (GT)"] --> I["Chèn lỗi giả<br/>nhiều mức nặng nhẹ"]
+    G --> Q0["Chạy QC trên nhãn gốc"]
+    I --> Q1["Chạy QC"]
+    Q1 --> RC["Recall theo loại<br/>và mức lỗi"]
+    Q0 --> PR["Cờ trên nhãn gốc<br/>= cận dưới của precision"]
+    Q1 --> AP["Áp dụng gợi ý"]
+    AP --> IOU["IoU 3D, sai số góc<br/>so với box gốc"]
+    AP --> LOOP["Mô phỏng qc, apply, qc<br/>trên 7 scene: có làm hỏng<br/>nhãn đúng không"]
+    RC --> PL["Pilot: số vòng trả lại và IoU 3D<br/>(mô phỏng, rồi người thật)"]
+    IOU --> PL
+```
+
+Mô tả chi tiết từng bước, kiến thức nền cần biết và các bẫy đã gặp: [`docs/WORKFLOW.md`](docs/WORKFLOW.md).
+
 ## Cấu trúc repo
 
 ```
