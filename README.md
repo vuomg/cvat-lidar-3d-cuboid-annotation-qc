@@ -46,15 +46,15 @@ Từ nhãn và point cloud đến cờ, gợi ý sửa, và quyết định củ
 ```mermaid
 flowchart TB
     N["nuScenes<br/>JSON + .pcd.bin"] --> P
-    V["Job CVAT 3D<br/>nhãn + point cloud .pcd"] --> P
-    P["Chuẩn hóa và tính đặc trưng<br/>số điểm trong box, khoảng cách,<br/>vận tốc theo track, IoU 3D"]
-    P --> C["5 checker: LOW_LIDAR_PTS, BAD_SIZE, OVERLAP,<br/>HEADING_REVERSED, BOX_OFFSET<br/>mức ERROR, WARNING, INFO kèm lý do"]
-    C --> X["Gợi ý sửa<br/>lật hướng, kích thước theo track, dịch box"]
+    V["Job CVAT 3D<br/>nhãn + .pcd"] --> P
+    P["Chuẩn hóa + đặc trưng<br/>số điểm, vận tốc, IoU 3D"]
+    P --> C["5 checker<br/>ERROR / WARNING / INFO"]
+    C --> X["Gợi ý sửa<br/>hướng, kích thước, dịch box"]
     X --> VW["Viewer HTML"]
-    X --> EXT["Extension trong CVAT"]
-    VW --> H{"Người quyết định"}
+    X --> EXT["Extension CVAT"]
+    VW --> H{"Người<br/>quyết định"}
     EXT --> H
-    H -->|"Đúng lỗi"| FIX["Sửa hoặc áp dụng gợi ý an toàn<br/>rồi QC lại để kiểm tra"]
+    H -->|"Đúng lỗi"| FIX["Sửa hoặc áp dụng<br/>gợi ý an toàn, rồi QC lại"]
     H -->|"Báo nhầm"| DEC["decisions.csv<br/>đo precision thật"]
 ```
 
