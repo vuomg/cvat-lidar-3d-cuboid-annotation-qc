@@ -1,0 +1,3 @@
+task_id,group,annotator_id,rounds_returned,iou3d_mean,minutes
+T001,baseline,A1,2,0.71,34
+T002,tool,A2,0,0.84,31

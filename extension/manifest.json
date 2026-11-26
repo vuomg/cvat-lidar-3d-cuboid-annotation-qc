@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Cuboid QC cho CVAT",
+  "version": "0.1.0",
+  "description": "Kiểm tra chất lượng cuboid 3D ngay trong CVAT: bấm QC để thấy lỗi (hướng, kích thước, lệch vị trí, trùng box, ít điểm LiDAR), nhảy tới đối tượng, ghi cờ và gợi ý sửa vào job. Cần chạy server QC trên máy (scripts/run_server.py).",
+  "permissions": ["storage"],
+  "host_permissions": ["http://127.0.0.1/*", "http://localhost/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://cvat.edufun.ai/*", "https://app.cvat.ai/*", "http://localhost/*", "http://127.0.0.1/*"],
+      "js": ["lib.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html"
+}

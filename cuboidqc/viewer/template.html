@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>cuboid-qc viewer</title>
+<style>
+  :root { --bg:#14161a; --panel:#1c1f26; --line:#2c313b; --text:#e6e8ec; --mut:#8b93a1;
+          --err:#ef5350; --warn:#ffb74d; --ok:#66bb6a; --acc:#4fc3f7; }
+  * { box-sizing:border-box; }
+  body { margin:0; height:100vh; display:flex; background:var(--bg); color:var(--text);
+         font:14px/1.45 system-ui,"Segoe UI",sans-serif; }
+  #side { width:360px; min-width:300px; background:var(--panel); border-right:1px solid var(--line);
+          display:flex; flex-direction:column; }
+  #filters { padding:10px; border-bottom:1px solid var(--line); display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  #filters input, #filters select { width:100%; padding:5px 6px; background:var(--bg); color:var(--text);
+          border:1px solid var(--line); border-radius:4px; }
+  #filters input { grid-column:1 / -1; }
+  #count { padding:6px 10px; color:var(--mut); font-size:12px; border-bottom:1px solid var(--line); }
+  #list { flex:1; overflow:auto; }
+  .it { padding:8px 10px; border-bottom:1px solid var(--line); cursor:pointer; display:flex; gap:8px; align-items:flex-start; }
+  .it:hover { background:#232733; } .it.sel { background:#2a3040; }
+  .dot { width:9px; height:9px; border-radius:50%; margin-top:5px; flex:none; }
+  .dot.ERROR { background:var(--err); } .dot.WARNING { background:var(--warn); }
+  .it .t { font-weight:600; } .it .s { color:var(--mut); font-size:12px; word-break:break-word; }
+  .badge { margin-left:auto; font-size:11px; padding:1px 6px; border-radius:8px; flex:none; }
+  .badge.yes { background:#1f3d27; color:var(--ok); } .badge.no { background:#42241f; color:var(--err); }
+  .badge.skip { background:#333; color:var(--mut); }
+  #main { flex:1; display:flex; flex-direction:column; min-width:0; }
+  #head { padding:10px 14px; border-bottom:1px solid var(--line); background:var(--panel); }
+  #head h2 { margin:0 0 4px; font-size:16px; }
+  #head .row { color:var(--mut); font-size:13px; } #fixtxt { color:var(--ok); margin-top:4px; }
+  #bar { padding:8px 14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+         border-bottom:1px solid var(--line); background:var(--panel); }
+  button { background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:5px;
+           padding:4px 8px; cursor:pointer; font:inherit; font-size:12.5px; }
+  #bar { padding:6px 10px; gap:6px; } #head { padding:8px 12px; } #head h2 { font-size:15px; }
+  #cv { min-height:300px; } #legend { font-size:11px; padding:4px 10px; }
+  @media (max-width:1000px) { #side { width:250px; min-width:220px; } .it .s { font-size:11px; } }
+  button:hover { border-color:var(--acc); } button.on { border-color:var(--acc); color:var(--acc); }
+  button.yes { border-color:#2f6b3b; } button.no { border-color:#7a3a33; }
+  .sp { flex:1; }
+  #cv { flex:1; width:100%; min-height:0; display:block; cursor:grab; }
+  #legend { padding:6px 14px; font-size:12px; color:var(--mut); background:var(--panel); border-top:1px solid var(--line); }
+  #legend b { display:inline-block; width:10px; height:10px; margin:0 4px 0 12px; vertical-align:middle; }
+  #empty { padding:30px; color:var(--mut); }
+</style>
+</head>
+<body>
+<div id="side">
+  <div id="filters">
+    <input id="q" placeholder="Tim theo class / token / chi tiet...">
+    <select id="fi"><option value="">Moi loai loi</option></select>
+    <select id="fs"><option value="">Moi muc do</option><option>ERROR</option><option>WARNING</option></select>
+    <select id="fd" style="grid-column:1 / -1"><option value="">Moi trang thai review</option>
+      <option value="none">Chua review</option><option value="yes">Loi that</option>
+      <option value="no">Bao nham</option><option value="skip">Bo qua</option></select>
+  </div>
+  <div id="count"></div>
+  <div id="list"></div>
+</div>
+<div id="main">
+  <div id="head"></div>
+  <div id="bar">
+    <button class="yes" id="b-yes">Loi that (A)</button>
+    <button class="no" id="b-no">Bao nham (R)</button>
+    <button id="b-skip">Bo qua (S)</button>
+    <span class="sp"></span>
+    <button id="t-fix" class="on">Goi y sua (F)</button>
+    <button id="t-pts" class="on">Diem LiDAR (P)</button>
+    <button id="t-nb" class="on">Box lan can (N)</button>
+    <button id="b-fit">Can giua (0)</button>
+    <button id="b-exp">Xuat nhan (CSV)</button>
+  </div>
+  <canvas id="cv"></canvas>
+  <div id="legend"><b style="background:#ef5350"></b>box bi co <b style="background:#66bb6a"></b>box goi y
+    <b style="background:#ffb74d"></b>diem trong box <b style="background:#7d8696"></b>diem LiDAR
+    <b style="background:#b388ff"></b>box cap chong nhau &nbsp; Mui ten = huong. Cuon: zoom, keo: di chuyen, J/K: chuyen loi.</div>
+</div>
+<script>
+const DATA = /*DATA*/null;
+const KEY = "cuboid-qc-decisions";
+let dec = JSON.parse(localStorage.getItem(KEY) || "{}");
+let shown = [], cur = -1, view = {s:22, ox:0, oy:0}, flags = {fix:true, pts:true, nb:true};
+
+const $ = id => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d");
+const issues = [...new Set(DATA.items.map(i => i.issue))];
+issues.forEach(x => { const o = document.createElement("option"); o.textContent = x; $("fi").appendChild(o); });
+
+function save() { localStorage.setItem(KEY, JSON.stringify(dec)); }
+function keyOf(it) { return it.token + "|" + it.issue; }
+
+function applyFilter() {
+  const q = $("q").value.toLowerCase(), fi = $("fi").value, fs = $("fs").value, fd = $("fd").value;
+  shown = DATA.items.filter(it => {
+    const d = dec[keyOf(it)] || "none";
+    return (!fi || it.issue === fi) && (!fs || it.severity === fs) && (!fd || d === fd) &&
+      (!q || (it.category + " " + it.token + " " + it.detail + " " + it.issue).toLowerCase().includes(q));
+  });
+  $("count").textContent = shown.length + " / " + DATA.items.length + " loi  -  da review " +
+    Object.keys(dec).length + "  -  du lieu: " + DATA.meta;
+  renderList();
+  if (shown.length) select(Math.min(Math.max(cur, 0), shown.length - 1)); else { cur = -1; draw(); renderHead(); }
+}
+
+function renderList() {
+  const el = $("list"); el.innerHTML = "";
+  shown.forEach((it, i) => {
+    const d = dec[keyOf(it)], div = document.createElement("div");
+    div.className = "it" + (i === cur ? " sel" : "");
+    div.innerHTML = '<span class="dot ' + it.severity + '"></span><div><div class="t">' + it.issue +
+      ' <span style="font-weight:400;color:var(--mut)">' + it.category + '</span></div><div class="s">' +
+      it.detail + '</div></div>' + (d ? '<span class="badge ' + d + '">' +
+      {yes:"loi that", no:"nham", skip:"bo qua"}[d] + '</span>' : "");
+    div.onclick = () => select(i);
+    el.appendChild(div);
+  });
+}
+
+function select(i) {
+  cur = i; renderList(); renderHead(); fit();
+  const s = $("list").children[i]; if (s) s.scrollIntoView({block:"nearest"});
+}
+
+function renderHead() {
+  const it = shown[cur];
+  if (!it) { $("head").innerHTML = '<div id="empty">Khong co loi nao khop bo loc.</div>'; return; }
+  const f = it.fix;
+  $("head").innerHTML = '<h2><span style="color:var(--' + (it.severity === "ERROR" ? "err" : "warn") + ')">' +
+    it.severity + '</span> &nbsp;' + it.issue + ' &nbsp;<span style="color:var(--mut);font-weight:400">' +
+    it.category + '</span></h2><div class="row">' + it.detail + '</div><div class="row">token ' + it.token +
+    ' &nbsp;|&nbsp; sample ' + it.sample.slice(0, 8) + ' &nbsp;|&nbsp; LiDAR trong box: ' + it.pts_in +
+    (f && f.box ? ' &rarr; sau khi sua: ' + f.pts_in : '') + (it.has_pts ? '' : ' (khong co point cloud)') +
+    '</div>' + (f ? '<div id="fixtxt">Goi y: ' + f.text + '</div>' : '');
+}
+
+function resize() {
+  const r = cv.getBoundingClientRect(), dp = window.devicePixelRatio || 1;
+  cv.width = r.width * dp; cv.height = r.height * dp; ctx.setTransform(dp, 0, 0, dp, 0, 0); draw();
+}
+function fit() {
+  const it = shown[cur]; if (!it) return;
+  const r = cv.getBoundingClientRect();
+  const ext = Math.max(Math.max(it.box.size[1], it.box.size[0]) * 3 + 3, 9);
+  view.s = Math.min(r.width, r.height) / ext; view.ox = 0; view.oy = 0; draw();
+}
+const X = x => cv.getBoundingClientRect().width / 2 + (x + view.ox) * view.s;
+const Y = y => cv.getBoundingClientRect().height / 2 - (y + view.oy) * view.s;
+
+function poly(b) {
+  const c = Math.cos(b.yaw), s = Math.sin(b.yaw), w = b.size[0], l = b.size[1], out = [];
+  for (const [dx, dy] of [[l/2, w/2], [-l/2, w/2], [-l/2, -w/2], [l/2, -w/2]])
+    out.push([b.translation[0] + dx * c - dy * s, b.translation[1] + dx * s + dy * c]);
+  return out;
+}
+function drawBox(b, color, lw, dash, fill) {
+  const p = poly(b);
+  ctx.beginPath(); p.forEach(([x, y], i) => i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))); ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  ctx.setLineDash(dash || []); ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.stroke(); ctx.setLineDash([]);
+  const c = Math.cos(b.yaw), s = Math.sin(b.yaw), l = b.size[1] / 2, x0 = b.translation[0], y0 = b.translation[1];
+  ctx.beginPath(); ctx.moveTo(X(x0), Y(y0)); ctx.lineTo(X(x0 + c * (l + 0.5)), Y(y0 + s * (l + 0.5)));
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.stroke();
+  const ax = x0 + c * (l + 0.5), ay = y0 + s * (l + 0.5), a = 0.35, d = 0.5;
+  ctx.beginPath(); ctx.moveTo(X(ax), Y(ay));
+  ctx.lineTo(X(ax - d * Math.cos(b.yaw - a)), Y(ay - d * Math.sin(b.yaw - a)));
+  ctx.moveTo(X(ax), Y(ay)); ctx.lineTo(X(ax - d * Math.cos(b.yaw + a)), Y(ay - d * Math.sin(b.yaw + a)));
+  ctx.stroke();
+}
+function inBox(p, b) {
+  const c = Math.cos(b.yaw), s = Math.sin(b.yaw), dx = p[0] - b.translation[0], dy = p[1] - b.translation[1];
+  return Math.abs(dx * c + dy * s) <= b.size[1] / 2 && Math.abs(-dx * s + dy * c) <= b.size[0] / 2 &&
+         Math.abs(p[2] - b.translation[2]) <= b.size[2] / 2;
+}
+
+function draw() {
+  const r = cv.getBoundingClientRect(); ctx.clearRect(0, 0, r.width, r.height);
+  ctx.fillStyle = "#0e1013"; ctx.fillRect(0, 0, r.width, r.height);
+  const it = shown[cur]; if (!it) return;
+  ctx.strokeStyle = "#1d2128"; ctx.lineWidth = 1;
+  for (let m = -40; m <= 40; m += 5) {
+    ctx.beginPath(); ctx.moveTo(X(m), 0); ctx.lineTo(X(m), r.height); ctx.moveTo(0, Y(m)); ctx.lineTo(r.width, Y(m)); ctx.stroke();
+  }
+  if (flags.pts && it.points) {
+    for (const p of it.points) {
+      ctx.fillStyle = inBox(p, it.box) ? "#ffb74d" : "#7d8696";
+      ctx.fillRect(X(p[0]) - 1, Y(p[1]) - 1, 2.2, 2.2);
+    }
+  }
+  if (flags.nb) for (const n of it.neighbors) drawBox(n, n.partner ? "#b388ff" : "#4a5263", n.partner ? 2.2 : 1.2);
+  drawBox(it.box, "#ef5350", 2.4, null, "rgba(239,83,80,0.10)");
+  if (flags.fix && it.fix && it.fix.box) drawBox(it.fix.box, "#66bb6a", 2.4, [7, 4]);
+  ctx.fillStyle = "#8b93a1"; ctx.font = "11px system-ui";
+  ctx.fillText("luoi 5 m  -  x phai, y len (toa do global, tam tai box bi co)", 10, r.height - 8);
+}
+
+cv.addEventListener("wheel", e => { e.preventDefault(); view.s *= e.deltaY < 0 ? 1.15 : 1 / 1.15; draw(); }, {passive:false});
+let drag = null;
+cv.addEventListener("mousedown", e => { drag = [e.clientX, e.clientY, view.ox, view.oy]; cv.style.cursor = "grabbing"; });
+window.addEventListener("mouseup", () => { drag = null; cv.style.cursor = "grab"; });
+window.addEventListener("mousemove", e => {
+  if (!drag) return; view.ox = drag[2] + (e.clientX - drag[0]) / view.s; view.oy = drag[3] - (e.clientY - drag[1]) / view.s; draw();
+});
+
+function decide(v) {
+  const it = shown[cur]; if (!it) return;
+  dec[keyOf(it)] = v; save();
+  const keep = cur; applyFilter(); if (shown.length) select(Math.min(keep + ($("fd").value ? 0 : 1), shown.length - 1));
+}
+function toggle(k, btn) { flags[k] = !flags[k]; $(btn).classList.toggle("on", flags[k]); draw(); }
+
+$("b-yes").onclick = () => decide("yes"); $("b-no").onclick = () => decide("no"); $("b-skip").onclick = () => decide("skip");
+$("t-fix").onclick = () => toggle("fix", "t-fix"); $("t-pts").onclick = () => toggle("pts", "t-pts"); $("t-nb").onclick = () => toggle("nb", "t-nb");
+$("b-fit").onclick = fit;
+$("b-exp").onclick = () => {
+  const rows = ["annotation_token,issue,severity,category,decision"];
+  DATA.items.forEach(it => { const d = dec[keyOf(it)]; if (d) rows.push([it.token, it.issue, it.severity, it.category, d].join(",")); });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["﻿" + rows.join("\n")], {type:"text/csv"}));
+  a.download = "decisions.csv"; a.click();
+};
+["q", "fi", "fs", "fd"].forEach(id => $(id).addEventListener("input", applyFilter));
+window.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  const k = e.key.toLowerCase();
+  if (k === "j" || k === "arrowdown") { if (cur < shown.length - 1) select(cur + 1); e.preventDefault(); }
+  else if (k === "k" || k === "arrowup") { if (cur > 0) select(cur - 1); e.preventDefault(); }
+  else if (k === "a") decide("yes"); else if (k === "r") decide("no"); else if (k === "s") decide("skip");
+  else if (k === "f") toggle("fix", "t-fix"); else if (k === "p") toggle("pts", "t-pts");
+  else if (k === "n") toggle("nb", "t-nb"); else if (k === "0") fit();
+});
+window.addEventListener("resize", resize);
+resize(); applyFilter();
+</script>
+</body>
+</html>

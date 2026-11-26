@@ -1,0 +1,9 @@
+# du lieu sinh ra khi chay (demo, log, bao cao CSV, viewer.html)
+data/
+# thong tin rieng cua tung may
+.cvat_login.xml
+.qc_token
+# python / node
+__pycache__/
+*.pyc
+node_modules/

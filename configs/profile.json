@@ -1,0 +1,701 @@
+{
+ "meta": {
+  "source": "V:\\data\\nuscenes/v1.0-mini",
+  "n_boxes": 16986
+ },
+ "size_ranges": {
+  "human.pedestrian.adult": {
+   "dims": [
+    [
+     0.32325,
+     1.05775
+    ],
+    [
+     0.2590830000000011,
+     1.2116969999999914
+    ],
+    [
+     1.22375,
+     2.10125
+    ]
+   ],
+   "src": "data n=5015"
+  },
+  "vehicle.car": {
+   "dims": [
+    [
+     1.4496499999999999,
+     2.50135
+    ],
+    [
+     3.5432,
+     6.054799999999999
+    ],
+    [
+     1.2401499999999999,
+     2.59085
+    ]
+   ],
+   "src": "data n=7619"
+  },
+  "vehicle.motorcycle": {
+   "dims": [
+    [
+     0.31490000000000007,
+     1.5551
+    ],
+    [
+     1.0664,
+     2.8136
+    ],
+    [
+     0.8061499999999999,
+     2.07885
+    ]
+   ],
+   "src": "data n=714"
+  },
+  "vehicle.truck": {
+   "dims": [
+    [
+     1.6235,
+     3.0404999999999998
+    ],
+    [
+     3.6851000000000003,
+     11.0509
+    ],
+    [
+     1.37765,
+     4.30135
+    ]
+   ],
+   "src": "data n=649"
+  },
+  "movable_object.barrier": {
+   "dims": [
+    [
+     1.5206,
+     3.8554
+    ],
+    [
+     0.33725000000000005,
+     0.83775
+    ],
+    [
+     0.8166,
+     1.4094
+    ]
+   ],
+   "src": "data n=2323"
+  },
+  "vehicle.bus.rigid": {
+   "dims": [
+    [
+     2.41105,
+     3.67595
+    ],
+    [
+     5.9231465000000005,
+     14.8477635
+    ],
+    [
+     2.5437,
+     4.8603
+    ]
+   ],
+   "src": "data n=410"
+  },
+  "vehicle.construction": {
+   "dims": [
+    [
+     1.9263500000000002,
+     3.52665
+    ],
+    [
+     3.1388499999999997,
+     8.13215
+    ],
+    [
+     1.8982999999999999,
+     3.0657
+    ]
+   ],
+   "src": "data n=196"
+  },
+  "vehicle.trailer": {
+   "dims": [
+    [
+     2.1414,
+     2.3546
+    ],
+    [
+     0.0,
+     15.843449999999999
+    ],
+    [
+     3.22775,
+     3.97525
+    ]
+   ],
+   "src": "data n=60"
+  }
+ },
+ "pts_expect": [
+  {
+   "key": [
+    "human.pedestrian.adult",
+    2
+   ],
+   "median": 5.0,
+   "n": 786,
+   "src": "class"
+  },
+  {
+   "key": [
+    "human.pedestrian.adult",
+    3
+   ],
+   "median": 3.0,
+   "n": 410,
+   "src": "class"
+  },
+  {
+   "key": [
+    "human.pedestrian.adult",
+    5
+   ],
+   "median": 1.0,
+   "n": 316,
+   "src": "class"
+  },
+  {
+   "key": [
+    "human.pedestrian.adult",
+    4
+   ],
+   "median": 2.0,
+   "n": 251,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.car",
+    5
+   ],
+   "median": 0.0,
+   "n": 877,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.car",
+    4
+   ],
+   "median": 2.0,
+   "n": 372,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.motorcycle",
+    2
+   ],
+   "median": 6.0,
+   "n": 110,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.motorcycle",
+    4
+   ],
+   "median": 1.0,
+   "n": 43,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.motorcycle",
+    3
+   ],
+   "median": 2.0,
+   "n": 70,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.car",
+    2
+   ],
+   "median": 22.0,
+   "n": 983,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.truck",
+    1
+   ],
+   "median": 429.0,
+   "n": 88,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.truck",
+    5
+   ],
+   "median": 3.0,
+   "n": 69,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.truck",
+    4
+   ],
+   "median": 12.0,
+   "n": 38,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.truck",
+    3
+   ],
+   "median": 21.5,
+   "n": 36,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.truck",
+    2
+   ],
+   "median": 66.0,
+   "n": 85,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.motorcycle",
+    5
+   ],
+   "median": 1.0,
+   "n": 45,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.motorcycle",
+    1
+   ],
+   "median": 16.0,
+   "n": 135,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.motorcycle",
+    0
+   ],
+   "median": 80.0,
+   "n": 30,
+   "src": "class"
+  },
+  {
+   "key": [
+    "movable_object.barrier",
+    1
+   ],
+   "median": 33.0,
+   "n": 489,
+   "src": "class"
+  },
+  {
+   "key": [
+    "movable_object.barrier",
+    2
+   ],
+   "median": 11.0,
+   "n": 262,
+   "src": "class"
+  },
+  {
+   "key": [
+    "movable_object.barrier",
+    4
+   ],
+   "median": 3.0,
+   "n": 155,
+   "src": "class"
+  },
+  {
+   "key": [
+    "movable_object.barrier",
+    5
+   ],
+   "median": 0.0,
+   "n": 278,
+   "src": "class"
+  },
+  {
+   "key": [
+    "movable_object.barrier",
+    3
+   ],
+   "median": 5.0,
+   "n": 246,
+   "src": "class"
+  },
+  {
+   "key": [
+    "human.pedestrian.adult",
+    1
+   ],
+   "median": 12.0,
+   "n": 949,
+   "src": "class"
+  },
+  {
+   "key": [
+    "human.pedestrian.adult",
+    0
+   ],
+   "median": 38.0,
+   "n": 415,
+   "src": "class"
+  },
+  {
+   "key": [
+    "movable_object.barrier",
+    0
+   ],
+   "median": 196.0,
+   "n": 87,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.car",
+    3
+   ],
+   "median": 6.0,
+   "n": 644,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.car",
+    1
+   ],
+   "median": 94.0,
+   "n": 853,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.truck",
+    0
+   ],
+   "median": 1392.0,
+   "n": 82,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.bus.rigid",
+    5
+   ],
+   "median": 4.0,
+   "n": 140,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.construction",
+    5
+   ],
+   "median": 2.0,
+   "n": 24,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.construction",
+    1
+   ],
+   "median": 187.5,
+   "n": 56,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.construction",
+    0
+   ],
+   "median": 692.0,
+   "n": 23,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.car",
+    0
+   ],
+   "median": 518.0,
+   "n": 461,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.bus.rigid",
+    4
+   ],
+   "median": 25.0,
+   "n": 31,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.bus.rigid",
+    3
+   ],
+   "median": 68.0,
+   "n": 50,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.trailer",
+    1
+   ],
+   "median": 334.0,
+   "n": 43,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.bus.rigid",
+    1
+   ],
+   "median": 344.0,
+   "n": 39,
+   "src": "class"
+  },
+  {
+   "key": [
+    "vehicle.bus.rigid",
+    2
+   ],
+   "median": 108.5,
+   "n": 78,
+   "src": "class"
+  },
+  {
+   "key": [
+    "human*",
+    2
+   ],
+   "median": 5.0,
+   "n": 786,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "human*",
+    3
+   ],
+   "median": 3.0,
+   "n": 410,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "human*",
+    5
+   ],
+   "median": 1.0,
+   "n": 316,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "human*",
+    4
+   ],
+   "median": 2.0,
+   "n": 251,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "vehicle*",
+    5
+   ],
+   "median": 1.0,
+   "n": 1155,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "vehicle*",
+    4
+   ],
+   "median": 3.0,
+   "n": 494,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "vehicle*",
+    2
+   ],
+   "median": 22.5,
+   "n": 1272,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "vehicle*",
+    3
+   ],
+   "median": 6.0,
+   "n": 812,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "vehicle*",
+    1
+   ],
+   "median": 103.0,
+   "n": 1214,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "vehicle*",
+    0
+   ],
+   "median": 602.0,
+   "n": 604,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "movable_object*",
+    1
+   ],
+   "median": 33.0,
+   "n": 489,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "movable_object*",
+    2
+   ],
+   "median": 11.0,
+   "n": 262,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "movable_object*",
+    4
+   ],
+   "median": 3.0,
+   "n": 155,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "movable_object*",
+    5
+   ],
+   "median": 0.0,
+   "n": 278,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "movable_object*",
+    3
+   ],
+   "median": 5.0,
+   "n": 246,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "human*",
+    1
+   ],
+   "median": 12.0,
+   "n": 949,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "human*",
+    0
+   ],
+   "median": 38.0,
+   "n": 415,
+   "src": "nhom"
+  },
+  {
+   "key": [
+    "movable_object*",
+    0
+   ],
+   "median": 196.0,
+   "n": 87,
+   "src": "nhom"
+  }
+ ],
+ "size_median": {
+  "human.pedestrian.adult": [
+   0.67,
+   0.737,
+   1.757
+  ],
+  "vehicle.car": [
+   1.935,
+   4.606,
+   1.637
+  ],
+  "vehicle.motorcycle": [
+   0.61,
+   1.88,
+   1.343
+  ],
+  "vehicle.truck": [
+   2.292,
+   5.907,
+   2.558
+  ],
+  "movable_object.barrier": [
+   2.068,
+   0.639,
+   1.078
+  ],
+  "vehicle.bus.rigid": [
+   2.908,
+   11.084,
+   3.419
+  ],
+  "vehicle.construction": [
+   2.525,
+   4.549,
+   2.252
+  ],
+  "vehicle.trailer": [
+   2.33,
+   14.01,
+   3.889
+  ]
+ }
+}

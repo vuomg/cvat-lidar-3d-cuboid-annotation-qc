@@ -1,0 +1,2 @@
+# Chi can numpy (kiem tra BOX_OFFSET, server QC, tich hop CVAT). Phan con lai dung thu vien chuan cua Python 3.10+.
+numpy>=1.24
