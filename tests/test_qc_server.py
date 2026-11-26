@@ -108,6 +108,15 @@ class TestAuthAndCache(ServerCase):
         self.assertEqual(body["have"], {"3": len(pcd)})
         self.assertEqual(self.http.call("GET", "/frames?job=otherjob")[1]["have"], {})   # cache tach theo job
 
+    def test_rejection_of_large_upload_returns_status_not_network_error(self):
+        """Tu choi (sai token / sai duong dan / thieu job) mot PUT LON phai tra ma loi, khong de ket noi bi reset.
+        Truoc day server tra loi ma chua doc het than yeu cau nen thinh thoang ben goi nhan loi mang."""
+        big = b"x" * (3 * 1024 * 1024)
+        for _ in range(12):
+            self.assertEqual(self.http.call("PUT", "/frames/0?job=j", raw=big, token="sai")[0], 401)
+            self.assertEqual(self.http.call("PUT", "/frames/abc?job=j", raw=big)[0], 404)
+            self.assertEqual(self.http.call("PUT", "/frames/0", raw=big)[0], 400)             # thieu job
+
     def test_bad_pcd_and_bad_route(self):
         self.assertEqual(self.http.call("PUT", "/frames/0?job=j", raw=b"khong phai pcd")[0], 400)
         self.assertEqual(self.http.call("PUT", "/frames/abc?job=j", raw=b"x")[0], 404)
@@ -160,6 +169,8 @@ class TestQcFlow(ServerCase):
         self.assertEqual(body["summary"]["flagged"], 1)
         it = body["items"][0]
         self.assertEqual((it["track_id"], it["frame"], it["label"]), (5, 1, "Car"))
+        self.assertEqual(it["pos"], [10.0, 1.6, 0.8])             # toa do box (x, y, z) de nguoi dung dinh vi
+        self.assertEqual(it["dist"], 10.1)                        # khoang cach toi xe
         self.assertIn("BOX_OFFSET", it["issues"])
         self.assertEqual(it["fix"]["kind"], "refit")
         self.assertFalse(it["fix"]["auto"])                       # conservative: khong tu dich box

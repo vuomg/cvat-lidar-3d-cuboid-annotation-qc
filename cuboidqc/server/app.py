@@ -150,14 +150,18 @@ class QcService:
         plan = cq.plan_writeback(annotations, result, label_ids, attr_ids, apply=apply, apply_policy=policy)
 
         refs, sugg = result["job"]["refs"], result["sugg"]
+        anns_by_tok = {a["token"]: a for a in result["job"]["anns"]}
         items = []
         for token, info in flagged.items():
             ref = refs[token]
+            t = anns_by_tok[token]["translation"]          # toa do trong he cua point cloud (ego): giup dinh vi box
             fxs = [sugg[(token, i)] for i in info["issues"] if (token, i) in sugg]
             fx = next((f for f in fxs if f.get("box")), fxs[0] if fxs else None)
             item = {"token": token, "kind": ref["kind"], "track_id": ref["track_id"], "shape_id": ref["shape_id"],
                     "frame": ref["frame"], "label": ref["label"], "severity": info["severity"],
-                    "issues": info["issues"], "notes": info["notes"], "fix": None}
+                    "issues": info["issues"], "notes": info["notes"], "fix": None,
+                    "pos": [round(t[0], 1), round(t[1], 1), round(t[2], 1)],
+                    "dist": round((t[0] ** 2 + t[1] ** 2) ** 0.5, 1)}
             if fx:
                 item["fix"] = {"kind": fx["kind"], "text": fx["text"], "has_box": bool(fx.get("box")),
                                "auto": bool(fx.get("box")) and cq._fix_allowed(policy, fx, info)}
@@ -211,11 +215,14 @@ def make_handler(service, token, allow_origins, quiet=False):
             given = self.headers.get("X-QC-Token", "")
             return bool(token) and hmac.compare_digest(given.encode(), token.encode())
 
-        def _body(self):
+        def _read_body(self):
+            """Doc het than yeu cau TRUOC khi tra loi. Neu tra loi loi (401/404/400) khi con du lieu chua doc roi dong
+            ket noi thi TCP co the gui RST va ben goi nhan loi mang thay vi ma loi (that su xay ra voi frame lon)."""
             n = int(self.headers.get("Content-Length") or 0)
             if n > MAX_BODY:
-                raise ValueError("Body qua lon (%d byte)" % n)
-            return self.rfile.read(n)
+                self.close_connection = True
+                return None
+            return self.rfile.read(n) if n else b""
 
         def _guard(self, fn):
             try:
@@ -245,6 +252,9 @@ def make_handler(service, token, allow_origins, quiet=False):
 
         def do_PUT(self):
             url = urlparse(self.path)
+            raw = self._read_body()
+            if raw is None:
+                return self._send(413, {"error": "Body qua lon (toi da %d byte)" % MAX_BODY})
             m = re.fullmatch(r"/frames/(\d+)", url.path)
             if not m:
                 return self._send(404, {"error": "Khong co duong dan %s" % url.path})
@@ -253,18 +263,20 @@ def make_handler(service, token, allow_origins, quiet=False):
                 job = parse_qs(url.query).get("job", [""])[0]
                 if not job or len(job) > 200:
                     raise ValueError("Thieu / sai tham so job")
-                raw = self._body()
                 pts = pcdio.parse_pcd(raw)
                 service.cache.put(job, int(m.group(1)), len(raw), pts)
                 self._send(200, {"ok": True, "points": int(len(pts))})
             self._guard(put)
 
         def do_POST(self):
+            raw = self._read_body()
+            if raw is None:
+                return self._send(413, {"error": "Body qua lon (toi da %d byte)" % MAX_BODY})
             if urlparse(self.path).path != "/qc":
                 return self._send(404, {"error": "Khong co duong dan %s" % self.path})
 
             def qc():
-                req = json.loads(self._body().decode("utf-8"))
+                req = json.loads(raw.decode("utf-8"))
                 self._send(200, service.run(req))
             self._guard(qc)
 
