@@ -39,7 +39,7 @@ cvat-lidar-3d-cuboid-annotation-qc/
 ├── scripts/                   # demo.ps1, save_login.ps1, start_server.ps1, run_server.py, make_synthetic.py
 ├── configs/                   # profile.json (thống kê tham chiếu), config.json (ngưỡng)
 ├── docs/                      # PILOT, CVAT_CALIBRATION, REFERENCES, reports/
-├── tests/                     # 146 test Python + kiểm tra đột biến
+├── tests/                     # 147 test Python + kiểm tra đột biến
 └── data/                      # sinh ra khi chạy (demo, log, báo cáo); không đưa vào git
 ```
 
@@ -101,9 +101,9 @@ kích thước theo track) làm hỏng **0** box đúng, còn `all` làm hỏng 
 
 ## Kiểm thử
 ```powershell
-python -W error::ResourceWarning -m unittest discover -s tests   # 146 test (hình học, checker, gợi ý sửa, CVAT, server)
-node --test extension/test/lib.test.js                           # 21 test JS (logic extension)
-python tests/mutation_check.py                                   # phá code có chủ đích: 30 đột biến, test phải bắt hết
+python -W error::ResourceWarning -m unittest discover -s tests   # 147 test (hình học, checker, gợi ý sửa, CVAT, server)
+node --test extension/test/lib.test.js                           # 26 test JS (logic extension)
+python tests/mutation_check.py                                   # phá code có chủ đích: 33 đột biến, test phải bắt hết
 ```
 
 ## Giấy phép

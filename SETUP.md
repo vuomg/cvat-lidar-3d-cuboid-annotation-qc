@@ -73,7 +73,8 @@ Muốn có project mẫu đã đủ, làm mục 5.
 ### 3.4 Dùng
 Mở một job 3D (ví dụ `http://localhost:8080/tasks/<task>/jobs/<job>`). Góc dưới trái có nút tròn **QC**.
 - **Chạy QC**: đọc job, nạp point cloud lần đầu (vài giây), hiện danh sách lỗi. Chỉ đọc, không ghi gì.
-- Bấm một lỗi: nhảy tới frame đó trong trang. Nút **chọn** mở đúng đối tượng (trang tải lại, CVAT lọc chỉ còn đối tượng đó).
+- Lỗi được **nhóm theo frame**, mỗi lỗi có huy hiệu **#ID** (ID đối tượng ở danh sách bên phải của CVAT) và vị trí `x, y`.
+  Bấm một lỗi: nhảy tới frame đó và **chọn đúng đối tượng** trong CVAT (không tải lại trang).
 - **Ghi cờ & gợi ý vào job**: có hộp xác nhận. **Lưu (Ctrl+S) mọi thay đổi trong CVAT trước**.
 - **Tự sửa (xem trước)**: tính trước phần tự sửa theo chính sách `conservative`.
 

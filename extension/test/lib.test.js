@@ -187,6 +187,46 @@ test('applyPlan: ke hoach rong thi khong goi mang', async () => {
   assert.equal(n, 0);
 });
 
+test('uiIdMap: danh so theo [tags, shapes, tracks] nhu giao dien CVAT', () => {
+  // du lieu that cua job demo: 10 shape (QC_SUGGESTION), 36 track; track dau co serverID 48 -> ID 11; track 60 -> ID 23
+  const ann = { tags: [], shapes: Array.from({ length: 10 }, (_, i) => ({ id: 100 + i })),
+    tracks: Array.from({ length: 36 }, (_, i) => ({ id: 48 + i })) };
+  const m = L.uiIdMap(ann);
+  assert.equal(m.shape[100], 1);
+  assert.equal(m.shape[109], 10);
+  assert.equal(m.track[48], 11);
+  assert.equal(m.track[60], 23);
+  assert.equal(m.track[83], 46);
+});
+
+test('uiIdMap: tags dem truoc shapes; thieu id thi bo qua', () => {
+  const m = L.uiIdMap({ tags: [{}, {}], shapes: [{ id: 5 }, {}], tracks: [{ id: 9 }] });
+  assert.equal(m.shape[5], 3);
+  assert.equal(m.track[9], 5);                    // 2 tag + 2 shape (1 khong id van duoc dem) + track
+  assert.deepEqual(L.uiIdMap({}), { track: {}, shape: {} });
+});
+
+test('uiIdOf', () => {
+  const m = L.uiIdMap({ shapes: [{ id: 7 }], tracks: [{ id: 3 }] });
+  assert.equal(L.uiIdOf(m, { kind: 'track', track_id: 3 }), 2);
+  assert.equal(L.uiIdOf(m, { kind: 'shape', shape_id: 7 }), 1);
+  assert.equal(L.uiIdOf(m, { kind: 'track', track_id: 999 }), null);
+  assert.equal(L.uiIdOf(null, { kind: 'track', track_id: 3 }), null);
+});
+
+test('groupByFrame: frame tang dan, ERROR truoc, roi theo ID CVAT', () => {
+  const m = L.uiIdMap({ tracks: [{ id: 1 }, { id: 2 }, { id: 3 }] });          // ID CVAT 1, 2, 3
+  const mk = (track_id, frame, severity) => ({ kind: 'track', track_id, frame, severity, token: `t${track_id}:${frame}`, issues: [] });
+  const g = L.groupByFrame([mk(3, 5, 'ERROR'), mk(1, 2, 'WARNING'), mk(2, 5, 'WARNING'), mk(1, 5, 'ERROR')], m);
+  assert.deepEqual(g.map((x) => x.frame), [2, 5]);
+  assert.deepEqual(g[1].items.map((i) => i.token), ['t1:5', 't3:5', 't2:5']);     // ERROR (ID 1, 3) roi WARNING (ID 2)
+});
+
+test('groupByFrame: khong co ban do van sap on dinh', () => {
+  const g = L.groupByFrame([{ frame: 1, severity: 'ERROR', token: 'b', kind: 'track' }, { frame: 1, severity: 'ERROR', token: 'a', kind: 'track' }], null);
+  assert.deepEqual(g[0].items.map((i) => i.token), ['a', 'b']);
+});
+
 test('filterItems', () => {
   const items = [{ severity: 'ERROR', issues: ['BOX_OFFSET'] }, { severity: 'WARNING', issues: ['BAD_SIZE', 'OVERLAP'] }];
   assert.equal(L.filterItems(items, {}).length, 2);

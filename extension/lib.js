@@ -155,10 +155,48 @@
     return done;
   }
 
+  /**
+   * Ban do ID cua CVAT (so hien o danh sach doi tuong ben phai): giao dien danh so 1, 2, 3... theo thu tu
+   * [tags, shapes, tracks] cua annotation do API tra ve. Da kiem chung tren CVAT 2.81.1 (36/36 muc khop).
+   * Tra {track: {serverID: id}, shape: {serverID: id}}.
+   */
+  function uiIdMap(ann) {
+    const m = { track: {}, shape: {} };
+    let i = (ann.tags || []).length;
+    for (const s of ann.shapes || []) { i++; if (s.id !== null && s.id !== undefined) m.shape[s.id] = i; }
+    for (const t of ann.tracks || []) { i++; if (t.id !== null && t.id !== undefined) m.track[t.id] = i; }
+    return m;
+  }
+
+  /** ID CVAT cua mot loi (item tu server); null neu khong tra duoc. */
+  function uiIdOf(map, item) {
+    if (!map) return null;
+    const v = item.kind === 'track' ? map.track[item.track_id] : map.shape[item.shape_id];
+    return v === undefined ? null : v;
+  }
+
+  /** Nhom loi theo frame (tang dan); trong moi frame: ERROR truoc WARNING, roi theo ID CVAT / token. */
+  function groupByFrame(items, map) {
+    const by = new Map();
+    for (const it of items) {
+      if (!by.has(it.frame)) by.set(it.frame, []);
+      by.get(it.frame).push(it);
+    }
+    const key = (it) => [SEV_ORDER[it.severity], uiIdOf(map, it) ?? 1e9];
+    return [...by.keys()].sort((a, b) => a - b).map((frame) => ({
+      frame,
+      items: by.get(frame).sort((a, b) => {
+        const ka = key(a), kb = key(b);
+        return ka[0] - kb[0] || ka[1] - kb[1] || String(a.token).localeCompare(String(b.token));
+      }),
+    }));
+  }
+
   function filterItems(items, f) {
     return items.filter((it) => (!f.severity || it.severity === f.severity) && (!f.issue || it.issues.includes(f.issue)));
   }
 
   return { SEV_ORDER, parseJobUrl, csrfFromCookie, objectUrl, isEmptyBody, planSteps, neededFrames, missingFrames,
-           jobKey, frameNames, bytesToBase64, base64ToBytes, pool, runQc, applyPlan, filterItems };
+           jobKey, frameNames, bytesToBase64, base64ToBytes, pool, runQc, applyPlan, filterItems,
+           uiIdMap, uiIdOf, groupByFrame };
 });

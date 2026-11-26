@@ -30,8 +30,8 @@ Extension chạy trên `http://localhost/*`, `http://127.0.0.1/*`, `https://cvat
 | Nút | Việc làm |
 |---|---|
 | **Chạy QC** | Đọc job, nạp point cloud (lần đầu; sau đó dùng cache của server), chạy kiểm tra, hiện danh sách lỗi. Chỉ đọc, không ghi gì. |
-| Bấm vào một lỗi | Nhảy tới **frame** đó ngay trong trang (không tải lại, kết quả QC còn nguyên) |
-| Nút **chọn** ở mỗi lỗi | Mở đúng đối tượng: trang **tải lại** và CVAT chỉ hiện đối tượng đó (đây là cách CVAT xử lý liên kết `serverID`; xóa bằng nút **Filters** của CVAT). Kết quả QC được giữ qua lần tải lại. |
+| Danh sách lỗi | **Nhóm theo frame** ("Frame 2 — 2 lỗi"); mỗi lỗi có huy hiệu **#23** là **ID đối tượng hiển thị ở danh sách bên phải của CVAT**, kèm vị trí `x, y` và khoảng cách tới xe |
+| Bấm vào một lỗi | Nhảy tới **frame** đó, rồi **cuộn danh sách bên phải của CVAT tới đúng đối tượng và chọn nó** (khung Top/Side/Front hiện box đó). Không tải lại trang, kết quả QC còn nguyên. Bấm tiêu đề "Frame N" để chỉ nhảy frame |
 | **Ghi cờ & gợi ý vào job** | Đặt thuộc tính `qc_issue` / `qc_note` lên cuboid bị cờ và tạo cuboid xanh `QC_SUGGESTION` tại vị trí gợi ý. Có hộp xác nhận. Tải lại trang sau khi ghi. |
 | **Tự sửa (xem trước)** | Tính trước những gì sẽ tự sửa (chính sách `conservative`: lật hướng khi ERROR, sửa kích thước theo track). Sau đó nút ghi đổi thành "Ghi thay đổi tự sửa vào job". |
 
@@ -58,9 +58,12 @@ Extension **không** tự sửa cấu hình label của project.
 - **Profile tham chiếu lấy từ nuScenes** (`profile.json`): kích thước và số điểm kỳ vọng theo class. Với dữ liệu của nhóm
   nên tính lại từ nhãn đã duyệt, nếu không có thể lệch (ví dụ barrier).
 - **Job bắt đầu từ frame > 0** được xử lý bằng cách đệm tên frame, nhưng **chưa thử trên CVAT thật** (job demo bắt đầu từ 0).
-- **Nhảy tới frame** hoạt động bằng cách đặt giá trị vào ô chọn frame của CVAT (`.cvat-player-frame-selector`); nếu CVAT bản khác không nhận
-  thì tự chuyển sang liên kết `?frame=…`. **Nút "chọn"** dùng `?frame=…&serverID=…&type=…`: đã kiểm chứng CVAT 2.81.1 nhảy đúng frame và
-  chỉ hiện đối tượng đích (bộ lọc), **chưa kiểm chứng** đối tượng có được tô sáng trong khung 3D hay không.
+- **ID #N** là số CVAT tự đánh khi tải job: `1 + vị trí` trong danh sách [tags, shapes, tracks] theo thứ tự API trả về (đã kiểm chứng
+  CVAT 2.81.1: khớp 36/36 mục). Vì shapes đứng trước tracks, **thêm/xóa cuboid gợi ý làm đổi ID của các track**; extension tính lại ID từ
+  annotation hiện tại mỗi lần tải trang hoặc chạy QC, nên chỉ lệch nếu bạn thêm/xóa đối tượng *sau khi tải trang* (khi đó tải lại trang).
+- **Nhảy frame** đặt giá trị vào ô chọn frame của CVAT (`.cvat-player-frame-selector`); **chọn đối tượng** cuộn danh sách ảo bên phải
+  (tìm nhị phân theo ID) rồi mô phỏng rê chuột lên mục đó. Cả hai dựa vào cấu trúc giao diện CVAT 2.81.1; nếu bản CVAT khác đổi cấu trúc,
+  nhảy frame tự chuyển sang liên kết `?frame=…` (tải lại trang), còn chọn đối tượng sẽ không có tác dụng (huy hiệu ID vẫn dùng được để tìm tay).
 - Kết quả QC lưu trong `sessionStorage` của tab (chỉ danh sách lỗi, khoảng vài KB, **không** gồm kế hoạch ghi). Sau khi tải lại trang,
   bấm "Ghi…" sẽ tự chạy lại QC để tính kế hoạch rồi mới hỏi xác nhận.
 - Sau khi **nạp lại hoặc cập nhật extension**, trang CVAT đang mở phải tải lại (F5); nếu không bảng sẽ báo "Extension vừa được nạp lại".
@@ -69,9 +72,9 @@ Extension **không** tự sửa cấu hình label của project.
 
 ## Kiểm thử
 ```powershell
-node --test extension/test/lib.test.js           # 21 test cho logic thuần (URL, thứ tự PATCH, base64, nạp frame, lỗi giữa chừng)
+node --test extension/test/lib.test.js           # 26 test cho logic thuần (URL, thứ tự PATCH, base64, nạp frame, lỗi giữa chừng)
 python -W error::ResourceWarning -m unittest discover -s tests   # gồm 20 test cho server QC
-python tests\mutation_check.py                   # 30 đột biến (cả Python và JS), test phải bắt hết
+python tests\mutation_check.py                   # 33 đột biến (cả Python và JS), test phải bắt hết
 ```
 
 ### Đã kiểm chứng đầu-cuối (trong trang CVAT thật, ở chế độ thử nghiệm: không qua service worker)
@@ -86,4 +89,4 @@ Các phần dưới đây phụ thuộc môi trường trình duyệt mà tôi k
 - [ ] **Ghi cờ & gợi ý vào job**: ghi thành công với phiên đăng nhập của bạn (kiểm tra header `X-CSRFToken` được CVAT chấp nhận); sau khi tải lại có cuboid xanh `QC_SUGGESTION`.
 - [ ] Chạy QC lần hai sau khi ghi: số cờ không đổi, không nhân đôi cuboid gợi ý.
 - [ ] Trên CVAT dùng HTTPS (ví dụ `cvat.edufun.ai`): service worker gọi được `http://127.0.0.1:8766` (không bị chặn).
-- [ ] Bấm một lỗi trong danh sách: nhảy đúng frame, đối tượng đích được chọn/tô sáng.
+- [x] Bấm một lỗi trong danh sách: nhảy đúng frame và chọn đúng đối tượng (đã thử trong Chrome với 3 lỗi: #23, #46, #32).

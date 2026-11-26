@@ -90,7 +90,7 @@
       else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
       else if (v !== false && v !== null && v !== undefined) el.setAttribute(k, v === true ? '' : v);
     }
-    for (const kid of kids.flat()) if (kid !== null && kid !== undefined && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    for (const kid of kids.flat(Infinity)) if (kid !== null && kid !== undefined && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
     return el;
   }
 
@@ -124,9 +124,12 @@
     .it { display: flex; gap: 8px; padding: 7px 10px; border-bottom: 1px solid #252a34; cursor: pointer; }
     .it:hover { background: #232733; } .it.act { background: #2a3040; }
     .grow { flex: 1; min-width: 0; }
-    button.pick { align-self: flex-start; background: none; border: 1px solid #3a4150; color: #aab1be; border-radius: 4px;
-                  font-size: 11px; padding: 1px 6px; cursor: pointer; }
-    button.pick:hover { border-color: #4fc3f7; color: #e6e8ec; }
+    .fh { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 4px 10px; cursor: pointer;
+          background: #20242d; border-bottom: 1px solid #2c313b; font-size: 12px; font-weight: 600; color: #cfd6e2; }
+    .fh:hover { background: #262b36; } .fh .c { margin-left: auto; font-weight: 400; color: #8b93a1; }
+    .cid { align-self: flex-start; flex: none; min-width: 34px; text-align: center; border-radius: 4px; padding: 1px 5px;
+           font-size: 12px; font-weight: 700; background: #2f3b52; color: #cfe4ff; border: 1px solid #44567a; }
+    .cid.na { background: #2a2d35; color: #8b93a1; border-color: #3a4150; font-weight: 400; }
     .dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 4px; flex: none; }
     .t { font-weight: 600; } .m { color: #8b93a1; font-size: 12px; }
     .note { color: #aab1be; font-size: 11.5px; word-break: break-word; }
@@ -221,19 +224,29 @@
     const sevSel = h('select', { onchange: (e) => { state.filter.severity = e.target.value; render(); } },
       ['', 'ERROR', 'WARNING'].map((s) => h('option', { value: s, selected: state.filter.severity === s }, s || 'Mọi mức')));
 
-    const list = h('div', { class: 'list' }, !r ? h('div', { class: 'empty' }, 'Bấm "Chạy QC" để kiểm tra job này.') :
-      !items.length ? h('div', { class: 'empty' }, r.items.length ? 'Không có lỗi khớp bộ lọc.' : 'Không phát hiện lỗi nào.') :
-      items.map((it) => h('div', { class: 'it' + (state.active === it.token ? ' act' : ''),
-                          onclick: () => go(it), title: 'Nhảy tới frame này (không tải lại trang)' },
+    ensureUiIds();
+    const itemRow = (it) => {
+      const cid = L.uiIdOf(state.uiIds, it);
+      return h('div', { class: 'it' + (state.active === it.token ? ' act' : ''), onclick: () => go(it),
+                        title: 'Bấm: nhảy tới frame và chọn đối tượng này trong danh sách bên phải của CVAT' },
         h('span', { class: 'dot', style: `background:${SEV_COLOR[it.severity]}` }),
+        h('span', { class: 'cid' + (cid === null ? ' na' : ''),
+                    title: cid === null ? 'Chưa xác định được ID trong CVAT' :
+                      `ID đối tượng hiển thị ở danh sách bên phải của CVAT (track ${it.track_id !== null && it.track_id !== undefined ? it.track_id : '-'})` },
+          cid === null ? '?' : '#' + cid),
         h('div', { class: 'grow' },
           h('div', { class: 't' }, it.issues.join(', ')),
-          h('div', { class: 'm' }, `${it.label} · frame ${it.frame} · ${it.severity}`),
+          h('div', { class: 'm' }, `${it.label} · ${it.severity}` + (it.pos ? ` · x=${it.pos[0]}, y=${it.pos[1]} (${it.dist} m)` : '')),
           h('div', { class: 'note' }, it.notes[0] || ''),
-          it.fix ? h('div', { class: 'fix' }, it.fix.text, it.fix.auto ? h('span', { class: 'auto' }, 'tự sửa') : null) : null),
-        h('button', { class: 'pick', title: 'Chọn đúng đối tượng này. Trang sẽ tải lại và CVAT chỉ hiện đối tượng đó ' +
-                      '(xóa ở nút Filters của CVAT). Kết quả QC vẫn được giữ.',
-                      onclick: (e) => { e.stopPropagation(); openObject(it); } }, 'chọn'))));
+          it.fix ? h('div', { class: 'fix' }, it.fix.text, it.fix.auto ? h('span', { class: 'auto' }, 'tự sửa') : null) : null));
+    };
+    const groups = r ? L.groupByFrame(items, state.uiIds) : [];
+    const list = h('div', { class: 'list' }, !r ? h('div', { class: 'empty' }, 'Bấm "Chạy QC" để kiểm tra job này.') :
+      !items.length ? h('div', { class: 'empty' }, r.items.length ? 'Không có lỗi khớp bộ lọc.' : 'Không phát hiện lỗi nào.') :
+      groups.map((g) => [
+        h('div', { class: 'fh', title: 'Nhảy tới frame này', onclick: () => jumpToFrame(g.frame) },
+          `Frame ${g.frame}`, h('span', { class: 'c' }, `${g.items.length} lỗi`)),
+        ...g.items.map(itemRow)]));
 
     put(els.panel, header, buttons, ...status, r ? chips : null, r ? h('div', { class: 'row' }, sevSel) : null, list);
   }
@@ -254,6 +267,7 @@
       const out = await L.runQc({ cvat: makeCvat(state.job.origin), server }, {
         jobId: state.job.jobId, origin: state.job.origin, apply, policy: state.policy, onProgress: (m) => setMsg(m) });
       state.last = out;
+      state.uiIds = L.uiIdMap(out.annotations);      // ID hien trong danh sach doi tuong cua CVAT (tinh tu cung annotation)
       state.busy = false;
       saveLast();
       setMsg(out.uploaded ? `Đã nạp ${out.uploaded} frame point cloud lần đầu.` : '');
@@ -304,21 +318,76 @@
     return true;
   }
 
-  /** Bam vao loi: nhay toi frame NGAY TRONG TRANG (giu nguyen ket qua QC). Neu CVAT khong nhan thi moi tai lai trang. */
-  function go(item) {
-    state.active = item.token;
-    render();
-    if (!jumpToFrame(item.frame)) return openObject(item);
-    setTimeout(() => {                                       // CVAT dat lai o frame ve frame that neu khong nhan
-      const input = document.querySelector('.cvat-player-frame-selector input');
-      if (input && Number(input.value) !== item.frame) openObject(item);
-    }, 600);
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const currentFrame = () => {
+    const input = document.querySelector('.cvat-player-frame-selector input');
+    return input ? Number(input.value) : null;
+  };
+
+  /**
+   * Chon doi tuong co ID `cid` trong danh sach ben phai cua CVAT: cuon danh sach (la danh sach ao, chi dung phan dang hien)
+   * den khi muc xuat hien, roi mo phong re chuot len muc do (CVAT kich hoat doi tuong khi re chuot).
+   * Danh sach xep tang dan theo ID nen tim nhi phan theo vi tri cuon; neu nguoi dung doi cach xep thi quet tuan tu.
+   */
+  async function activateInSidebar(cid) {
+    const box = document.querySelector('.cvat-virtual-list-viewport');
+    if (!box) return false;
+    const idsNow = () => [...box.querySelectorAll('.cvat-objects-sidebar-state-item')].map((e) => Number(e.id.split('-').pop()));
+    const find = () => document.getElementById('cvat-objects-sidebar-state-item-' + cid);
+    let el = find();
+    let lo = 0;
+    let hi = Math.max(0, box.scrollHeight - box.clientHeight);
+    for (let i = 0; i < 14 && !el; i++) {                    // tim nhi phan
+      box.scrollTop = Math.floor((lo + hi) / 2);
+      await sleep(130);
+      el = find();
+      if (el) break;
+      const ids = idsNow();
+      if (!ids.length) continue;
+      if (Math.min(...ids) > cid) hi = Math.floor((lo + hi) / 2); else lo = Math.floor((lo + hi) / 2);
+    }
+    for (let y = 0; !el && y <= box.scrollHeight; y += Math.max(60, box.clientHeight * 0.8)) {   // du phong: quet tuan tu
+      box.scrollTop = y;
+      await sleep(130);
+      el = find();
+    }
+    if (!el) return false;
+    el.scrollIntoView({ block: 'center' });
+    await sleep(150);
+    const r = el.getBoundingClientRect();
+    const opts = { bubbles: true, cancelable: true, view: window, clientX: r.left + r.width / 2, clientY: r.top + 20 };
+    for (const t of ['pointerover', 'mouseover', 'mouseenter', 'pointermove', 'mousemove']) el.dispatchEvent(new MouseEvent(t, opts));
+    return true;
   }
 
-  /** Mo dung doi tuong (serverID + type). Phai tai lai trang; ket qua QC duoc khoi phuc tu sessionStorage. */
+  /** Bam vao loi: nhay toi frame ngay trong trang (giu ket qua QC) roi chon dung doi tuong trong danh sach cua CVAT. */
+  async function go(item) {
+    state.active = item.token;
+    render();
+    if (currentFrame() !== item.frame) {
+      if (!jumpToFrame(item.frame)) return openObject(item);
+      for (let i = 0; i < 12 && currentFrame() !== item.frame; i++) await sleep(100);
+      if (currentFrame() !== item.frame) return openObject(item);
+      await sleep(700);                                      // doi CVAT dung xong danh sach doi tuong cua frame moi
+    }
+    const cid = L.uiIdOf(state.uiIds, item);
+    if (cid !== null) await activateInSidebar(cid);
+  }
+
+  /** Du phong khi khong dat duoc o frame: mo bang lien ket (tai lai trang; ket qua QC duoc khoi phuc tu sessionStorage). */
   function openObject(item) {
     saveLast();
     location.href = L.objectUrl(state.job.origin, state.job.taskId, state.job.jobId, item);
+  }
+
+  /** ID CVAT cua tung doi tuong: tinh tu annotation hien tai tren server (cung trang thai giao dien da tai). */
+  function ensureUiIds() {
+    if (state.uiIds || state.uiIdsLoading || !state.job || !state.last) return;
+    state.uiIdsLoading = true;
+    makeCvat(state.job.origin).getJson(`/api/jobs/${state.job.jobId}/annotations`)
+      .then((ann) => { state.uiIds = L.uiIdMap(ann); })
+      .catch(() => { /* khong co ID thi hien dau ? */ })
+      .finally(() => { state.uiIdsLoading = false; render(); });
   }
 
   function toggle() {
@@ -333,7 +402,7 @@
     const changed = (job && job.jobId) !== (state.job && state.job.jobId);
     state.job = job;
     if (changed) {
-      state.last = null; state.msg = ''; state.err = ''; state.active = null;
+      state.last = null; state.msg = ''; state.err = ''; state.active = null; state.uiIds = null;
       if (job) restoreLast();
     }
     if (!host) build();
