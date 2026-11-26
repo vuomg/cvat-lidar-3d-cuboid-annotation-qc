@@ -45,23 +45,17 @@ Từ nhãn và point cloud đến cờ, gợi ý sửa, và quyết định củ
 
 ```mermaid
 flowchart TB
-    subgraph IN["Đầu vào"]
-        N["nuScenes<br/>JSON + .pcd.bin"]
-        V["Job CVAT 3D<br/>nhãn + point cloud .pcd"]
-    end
-    N --> P["Chuẩn hóa<br/>tâm, kích thước, hướng, track"]
-    V --> P
-    P --> F["Đặc trưng<br/>số điểm trong box, khoảng cách,<br/>vận tốc theo track, IoU 3D"]
-    F --> C["5 checker<br/>LOW_LIDAR_PTS, BAD_SIZE, OVERLAP,<br/>HEADING_REVERSED, BOX_OFFSET"]
-    C --> S["Mức độ ERROR, WARNING, INFO<br/>kèm lý do"]
-    S --> X["Gợi ý sửa<br/>lật hướng, kích thước theo track, dịch box"]
+    N["nuScenes<br/>JSON + .pcd.bin"] --> P
+    V["Job CVAT 3D<br/>nhãn + point cloud .pcd"] --> P
+    P["Chuẩn hóa và tính đặc trưng<br/>số điểm trong box, khoảng cách,<br/>vận tốc theo track, IoU 3D"]
+    P --> C["5 checker: LOW_LIDAR_PTS, BAD_SIZE, OVERLAP,<br/>HEADING_REVERSED, BOX_OFFSET<br/>mức ERROR, WARNING, INFO kèm lý do"]
+    C --> X["Gợi ý sửa<br/>lật hướng, kích thước theo track, dịch box"]
     X --> VW["Viewer HTML"]
     X --> EXT["Extension trong CVAT"]
     VW --> H{"Người quyết định"}
     EXT --> H
-    H -->|"Đúng lỗi"| FIX["Sửa hoặc áp dụng<br/>gợi ý an toàn"]
+    H -->|"Đúng lỗi"| FIX["Sửa hoặc áp dụng gợi ý an toàn<br/>rồi QC lại để kiểm tra"]
     H -->|"Báo nhầm"| DEC["decisions.csv<br/>đo precision thật"]
-    FIX --> RE["QC lại để kiểm tra"]
 ```
 
 ### 3. Kiến trúc khi dùng trong CVAT
